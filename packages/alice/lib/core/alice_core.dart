@@ -1,9 +1,10 @@
 import 'dart:async' show FutureOr, StreamSubscription;
 
+import 'package:alice/core/alice_notification.dart';
 import 'package:alice/core/alice_storage.dart';
 import 'package:alice/core/alice_utils.dart';
+import 'package:alice/core/debug_pop_up.dart';
 import 'package:alice/helper/alice_export_helper.dart';
-import 'package:alice/core/alice_notification.dart';
 import 'package:alice/helper/operating_system.dart';
 import 'package:alice/model/alice_configuration.dart';
 import 'package:alice/model/alice_export_result.dart';
@@ -14,6 +15,7 @@ import 'package:alice/model/alice_log.dart';
 import 'package:alice/ui/common/alice_navigation.dart';
 import 'package:alice/utils/shake_detector.dart';
 import 'package:flutter/material.dart';
+import 'package:overlay_support/overlay_support.dart';
 
 class AliceCore {
   /// Configuration of Alice
@@ -74,6 +76,7 @@ class AliceCore {
         context: getContext()!,
         stats: stats,
       );
+      showFloatingButton();
     }
   }
 
@@ -152,5 +155,31 @@ class AliceCore {
   void _unsubscribeFromCallChanges() {
     _callsSubscription?.cancel();
     _callsSubscription = null;
+  }
+
+  bool isShowedBubble = false;
+
+  void showFloatingButton() {
+    if (isShowedBubble) return;
+
+    final context = getContext();
+    if (context == null) return;
+
+    isShowedBubble = true;
+    showOverlay(
+      (context, t) {
+        return Opacity(
+          opacity: t,
+          child: DebugPopUp(
+            callsSubscription: _configuration.aliceStorage.callsStream,
+            onClicked: () {
+              navigateToCallListScreen();
+            },
+            aliceCore: this,
+          ),
+        );
+      },
+      duration: Duration.zero,
+    );
   }
 }
